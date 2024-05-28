@@ -464,7 +464,6 @@ This is a good place to put keybindings."
   )
 
 
-
 ;;; DEFINE MODE ---------------------------------------------------------------
 ;;;###autoload
 (define-derived-mode picat-mode prog-mode "Picat"
@@ -503,8 +502,8 @@ If an optional argument SYSTEM is non-nil, set up mode for the given system."
     ;; ["Indent predicate" picat-indent-predicate t]
     ;; ["Indent buffer" picat-indent-buffer t]
     ;; ["Align region" align (use-region-p)]
-    ["Load Picat File"  picat-load-file]
     ["Compile Picat File"  picat-compile-file]
+    ["Load Picat File"  picat-load-file]
     ;; ["Evaluate Region & Go" picat-send-region-and-go]
     ;; ["Evaluate Region" picat-send-region]
     ["--" nil]
@@ -549,62 +548,13 @@ If an optional argument SYSTEM is non-nil, set up mode for the given system."
 The following commands are available:
 \\{picat-inferior-mode-map}
 
-A Picat process can be fired up with M-x run-picat.
-
-Customization: Entry to this mode runs the hooks on comint-mode-hook and
-picat-inferior-mode-hook (in that order).
-
-You can send text to the inferior Picat process from other buffers containing
-Picat source.
-    switch-to-picat switches the current buffer to the Picat process buffer.
-    picat-send-region sends the current region to the Picat process.
-    
-    picat-send-region-and-go
-        switch to the Picat process buffer after sending their text.
-For information on running multiple processes in multiple buffers, see
-documentation for variable picat-buffer.
-
-Commands:
-Return after the end of the process' output sends the text from the
-    end of process to point.
-Return before the end of the process' output copies the sexp ending at point
-    to the end of the process' output, and sends it.
-Delete converts tabs to spaces as it moves back.
-Tab indents for Picat; with argument, shifts rest
-    of expression rigidly with the current line.
-C-M-q does Tab on each line starting within following expression.
-Paragraphs are separated only by blank lines.  Semicolons start comments.
-If you accidentally suspend your process, use \\[comint-continue-subjob]
-to continue it."
+A Picat process can be fired up with M-x run-picat."
+  
   ;; Customize in picat-inferior-mode-hook
   (setq comint-prompt-regexp "^Picat> *")
   
   (picat-inferior-mode-variables)
-  ;;(c-subword-mode t)
-  ;;(setq comint-process-echoes t)
-  (setq mode-line-process '(":%s"))
-  ;; (setq comint-input-filter (function picat-input-filter))
-  ;; (setq comint-get-old-input (function picat-get-old-input))
-  )
-
-;; (defcustom picat-inferior-filter-regexp "\\`\\s *\\S ?\\S ?\\s *\\'"
-;;   "*Input matching this regexp are not saved on the history list.
-;; Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters."
-;;   :type 'regexp
-;;   :group 'picat)
-
-;; (defun picat-input-filter (str)
-;;   "Don't save anything matching `picat-inferior-filter-regexp'."
-;;   (not (string-match picat-inferior-filter-regexp str))
-;;   )
-
-;; (defun picat-get-old-input ()
-;;   "Snarf the sexp ending at point."
-;;   (save-excursion
-;;     (let ((end (point)))
-;;       (backward-sexp)
-;;       (buffer-substring (point) end)))
-;;   )
+  (setq mode-line-process '(":%s")))
 
 (easy-menu-define
   picat-inferior-menu picat-inferior-mode-map
@@ -718,29 +668,46 @@ Caches the last pair used in the last `picat-load-file' command.
 Used for determining the default in the next one.")
 
 
-(defun picat-load-file (file-name)
-  "Compile (if neccessary and Load a Picat file FILE-NAME into the inferior Picat process."
-  (interactive (comint-get-source
-                "Load Picat file: " picat-prev-dir/file
-                picat-source-modes t))
+(defun picat-load-file (file-name &optional arg)
+  "Compile (if neccessary) and load a Picat file FILE-NAME into the inferior Picat process.
+Switch to Picat proccess buffer if prefix arg is given."
+
+  (interactive (list (car (comint-get-source
+                           "Load Picat file: " picat-prev-dir/file
+                           picat-source-modes t))
+                     current-prefix-arg))
+  
   (comint-check-source file-name)
 
   (setq picat-prev-dir/file
         (cons (file-name-directory    file-name)
               (file-name-nondirectory file-name)))
-  (comint-send-string (picat-proc) (concat "load(\"" file-name "\")\n")))
+  (comint-send-string (picat-proc) (concat "load(\"" file-name "\")\n"))
+  (when arg (switch-to-picat t)))
 
 
-(defun picat-compile-file (file-name)
-  "Compile a Picat file FILE-NAME into the inferior Picat process."
+(defun picat-load-file-and-go (file-name)
   (interactive (comint-get-source
-                "Compile Picat file: " picat-prev-dir/file
-                picat-source-modes t))
+                           "Load Picat file: " picat-prev-dir/file
+                           picat-source-modes t))
+  (picat-load-file file-name t))
+
+
+(defun picat-compile-file (file-name &optional arg)
+  "Compile a Picat file FILE-NAME into the inferior Picat process.
+Switch to Picat proccess buffer if prefix arg is given."
+
+  (interactive (list (car (comint-get-source
+                           "Compile Picat file: " picat-prev-dir/file
+                           picat-source-modes t))
+                     current-prefix-arg))
+
   (comint-check-source file-name)
   (setq picat-prev-dir/file
         (cons (file-name-directory    file-name)
               (file-name-nondirectory file-name)))
-  (comint-send-string (picat-proc) (concat "compile(\"" file-name "\")\n")))
+  (comint-send-string (picat-proc) (concat "compile(\"" file-name "\")\n"))
+  (when arg (switch-to-picat t)))
 
 
 (defun picat-proc ()
