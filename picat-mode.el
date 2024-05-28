@@ -342,7 +342,7 @@ This is a good place to put keybindings."
 
 ;;; RULES ---------------------------------------------------------------------
 (defun picat-smie-rules (kind token)
-  (message "%s %s (point: %s)" kind token (point))
+  ;;(message "%s %s (point: %s)" kind token (point))
   
   (pcase (cons kind token)
     (`(:before . ",")
@@ -391,6 +391,8 @@ This is a good place to put keybindings."
 (defun picat-smie-indent ()
   (picat-smie-indent-brackets))
 
+
+;; PICAT-SMIE-INDENT-BRACKETS -------------------------------------------------
 (defun picat-smie-indent-brackets ()
 
   ;;(message "picat-smie-indent-brackets")
@@ -403,38 +405,40 @@ This is a good place to put keybindings."
         (indent2 (* 2 picat-indent-width)))
 
     (save-excursion
+      (when (< 0 (nth 0 (syntax-ppss (point))))
+        ;;(message "picat-smie-indent-brackets: syntax %s" (nth 0 (syntax-ppss (point))))
+        (with-demoted-errors "picat-smie-indent-brackets: %s"
+          (backward-up-list)
+          (when (looking-at "\\s(")
+            (let* ((open-bracket (char-after (point)))
+                   (close-bracket (cdr (assoc open-bracket picat--brackets)))
+                   (br-col (current-column)))
 
-      (backward-up-list)
-      (when (looking-at "\\s(")
-        (let* ((open-bracket (char-after (point)))
-               (close-bracket (cdr (assoc open-bracket picat--brackets)))
-               (br-col (current-column)))
+              ;; X = {
+              ;;     y
+              ;; }
+              (cond
+               ((and (smie-rule-hanging-p) (smie-rule-prev-p "="))
+                (forward-line 0)
+                (forward-comment (- br-col (current-column)))
+                (+ (current-column) (if (eq curchar close-bracket) indent0 indent1)))
 
-          ;; X = {
-          ;;     y
-          ;; }
-          (cond
-           ((and (smie-rule-hanging-p) (smie-rule-prev-p "="))
-            (forward-line 0)
-            (forward-comment (- br-col (current-column)))
-            (+ (current-column) (if (eq curchar close-bracket) indent0 indent1)))
+               ;; Prolog if expression
+               ((and (eq open-bracket ?\() cur-tok-if-delim)
+                (current-column))
+               ((and (eq open-bracket ?\() prev-tok-if-delim)
+                (+ (current-column) indent1))
 
-           ;; Prolog if expression
-           ((and (eq open-bracket ?\() cur-tok-if-delim)
-            (current-column))
-           ((and (eq open-bracket ?\() prev-tok-if-delim)
-            (+ (current-column) indent1))
-
-           ;; closing bracket are indented as the opening bracket
-           ;; first item is indented as the opening bracket plus one indent width
-           (t
-            (forward-char)
-            (forward-comment (- curpos (point)))
-            (if (= curpos (point))
-                (+ br-col (if (eq curchar close-bracket) 0 indent1))
-              (if (eq curchar close-bracket) br-col (current-column))
-              ))
-           )))
+               ;; closing bracket are indented as the opening bracket
+               ;; first item is indented as the opening bracket plus one indent width
+               (t
+                (forward-char)
+                (forward-comment (- curpos (point)))
+                (if (= curpos (point))
+                    (+ br-col (if (eq curchar close-bracket) 0 indent1))
+                  (if (eq curchar close-bracket) br-col (current-column))
+                  ))
+               )))))
       )))
 
 
