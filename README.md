@@ -6,7 +6,8 @@ Public Domain.  All warranties are disclaimed.
 ## Commentary: ##
 
 The major mode for editing Picat code. It is loozely inspired by
-prolog-mode and Reinhard Urban's picat-mode.
+prolog-mode and Reinhard Urban's picat-mode. It provides indentation, 
+syntax highlighting, and basic ineraction with the Picat process.
 
 ## Known-issues: ##
 - I have no idea how to handle indentation for do-while loops.
