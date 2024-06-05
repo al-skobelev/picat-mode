@@ -405,7 +405,7 @@ This is a good place to put keybindings."
         (indent2 (* 2 picat-indent-width)))
 
     (save-excursion
-      (when (< 0 (nth 0 (syntax-ppss (point))))
+      (when (< 0 (nth 0 (syntax-ppss (point)))) ;; in brackets
         ;;(message "picat-smie-indent-brackets: syntax %s" (nth 0 (syntax-ppss (point))))
         (with-demoted-errors "picat-smie-indent-brackets: %s"
           (backward-up-list)
@@ -670,7 +670,7 @@ Used for determining the default in the next one.")
 
 (defun picat-load-file (file-name &optional arg)
   "Compile (if neccessary) and load a Picat file FILE-NAME into the inferior Picat process.
-Switch to Picat proccess buffer if prefix arg is given."
+Switch to the Picat proccess buffer if the prefix arg is not given."
 
   (interactive (list (car (comint-get-source
                            "Load Picat file: " picat-prev-dir/file
@@ -683,7 +683,7 @@ Switch to Picat proccess buffer if prefix arg is given."
         (cons (file-name-directory    file-name)
               (file-name-nondirectory file-name)))
   (comint-send-string (picat-proc) (concat "load(\"" file-name "\")\n"))
-  (when arg (switch-to-picat t)))
+  (unless arg (switch-to-picat t)))
 
 
 (defun picat-load-file-and-go (file-name)
@@ -695,7 +695,7 @@ Switch to Picat proccess buffer if prefix arg is given."
 
 (defun picat-compile-file (file-name &optional arg)
   "Compile a Picat file FILE-NAME into the inferior Picat process.
-Switch to Picat proccess buffer if prefix arg is given."
+Switch to the Picat proccess buffer if the prefix arg is not given."
 
   (interactive (list (car (comint-get-source
                            "Compile Picat file: " picat-prev-dir/file
@@ -707,7 +707,7 @@ Switch to Picat proccess buffer if prefix arg is given."
         (cons (file-name-directory    file-name)
               (file-name-nondirectory file-name)))
   (comint-send-string (picat-proc) (concat "compile(\"" file-name "\")\n"))
-  (when arg (switch-to-picat t)))
+  (unless arg (switch-to-picat t)))
 
 
 (defun picat-proc ()
