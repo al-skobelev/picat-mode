@@ -72,7 +72,8 @@ This is a good place to put keybindings."
 
 ;;; KEYWORDS, BUILTINS, OPERATORS ---------------------------------------------
 (defconst picat-keywords
-  '("import" "in" "not" "fail" "pass" "true" "false"
+  '("import" "in" "include" "module"
+    "not" "fail" "pass" "true" "false"
     "private" "table" "index"
     "foreach" "while" "do" "else" "elseif"
     "then" "if" "end" "break"
