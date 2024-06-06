@@ -594,10 +594,12 @@ is run).
   (if (null cmd) (setq cmd picat-program-name))
   
   (if (not (comint-check-proc "*picat*"))
-      (let ((cmdlist (picat-args-to-list cmd)))
-        (set-buffer (apply 'make-comint "picat" (car cmdlist)
-                           nil
-                           (if picat-path (cons picat-path (cdr cmdlist)) (cdr cmdlist))))
+      (let* ((cmdlist (picat-args-to-list cmd))
+             (cmdname (car cmdlist))
+             (cmdargs (if picat-path (append (list "-path" picat-path) (cdr cmdlist))
+                        (cdr cmdlist))))
+
+        (set-buffer (apply 'make-comint "picat" cmdname nil cmdargs))
         (picat-inferior-mode)))
   
   (setq picat-program-name cmd)
