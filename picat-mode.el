@@ -34,12 +34,6 @@
   :group 'picat)
 
 
-(defcustom picat-start-file-name ".picat-init.pi"
-  "*Program invoked by the `run-picat' command."
-  :type 'string
-  :group 'picat)
-
-
 (defcustom picat-path nil
   "Path to directory for loading picat modules."
   :type 'string
@@ -601,20 +595,13 @@ is run).
   (if (not (comint-check-proc "*picat*"))
       (let ((cmdlist (picat-args-to-list cmd)))
         (set-buffer (apply 'make-comint "picat" (car cmdlist)
-                           (picat-start-file (car cmdlist))
+                           nil
                            (if picat-path (cons picat-path (cdr cmdlist)) (cdr cmdlist))))
         (picat-inferior-mode)))
   
   (setq picat-program-name cmd)
   (setq picat-buffer "*picat*")
   (pop-to-buffer "*picat*"))
-
-(defun picat-start-file (prog)
-  "Return the name of the start file corresponding to PROG.
-Search in the directories \"~\" and \"~/.emacs.d\", in this
-order.  Return nil if no start file found."
-  (if (and picat-start-file-name (file-exists-p picat-start-file-name))
-      picat-start-file-name))
 
 
 (defun picat-send-region (start end)
