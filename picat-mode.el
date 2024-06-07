@@ -28,7 +28,7 @@
   :safe 'integerp)
 
 
-(defcustom picat-program-name "picat"
+(defcustom picat-program "picat"
   "*Program invoked by the `run-picat' command."
   :type 'string
   :group 'picat)
@@ -573,12 +573,26 @@ A Picat process can be fired up with M-x run-picat."
                                                 (length string)))))))))
 
 
+(defun picat--push-arg-in-cmdargs (arg cmdargs)
+  (pcase arg 
+    ((pred consp) 
+     (unless (or (null (cadr arg)) (member (car arg) cmdargs))
+       (append arg cmdargs)))
+    ((pred null) cmdargs)
+    (_
+     (unless (member arg cmdargs) (cons arg cmdargs))))
+  )
+
+(defun picat--push-args-in-cmdargs (args cmdargs)
+  (dolist (arg (reverse args) cmdargs)
+    (setq cmdargs (picat--push-arg-in-cmdargs arg cmdargs))))
+
 ;;;###autoload
 (defun run-picat (&optional cmd)
   "Run an inferior Picat process, input and output via buffer `*picat*'.
 If there is a process already running in `*picat*', switch to that buffer.
 With argument, allows you to edit the command line (default is value
-of `picat-program-name').
+of `picat-program').
 If the file `~/.picat_init' exists, it is given as initial input.
 Note that this may lose due to a timing error if the Picat processor
 discards input when it starts up.
@@ -588,21 +602,21 @@ is run).
 
   (interactive
    (list (if current-prefix-arg
-	     (read-string "Run Picat: " picat-program-name)
-	   picat-program-name)))
+	     (read-string "Run Picat: " picat-program)
+	   picat-program)))
 
-  (if (null cmd) (setq cmd picat-program-name))
+  (if (null cmd) (setq cmd picat-program))
   
   (if (not (comint-check-proc "*picat*"))
       (let* ((cmdlist (picat-args-to-list cmd))
              (cmdname (car cmdlist))
-             (cmdargs (if picat-path (append (list "-path" picat-path) (cdr cmdlist))
-                        (cdr cmdlist))))
+             (cmdargs
+              (picat--push-args-in-cmdargs `(("-path" ,picat-path)) (cdr cmdlist))))
 
         (set-buffer (apply 'make-comint "picat" cmdname nil cmdargs))
         (picat-inferior-mode)))
   
-  (setq picat-program-name cmd)
+  (setq picat-program cmd)
   (setq picat-buffer "*picat*")
   (pop-to-buffer "*picat*"))
 
@@ -716,12 +730,12 @@ See variable `picat-buffer'."
                           (current-buffer)
                         picat-buffer)))
 
-(defun picat-interactively-start-process (&optional cmd)
-  "Start an inferior Picat process.  Return the process started.
-Since this command is run implicitly, always ask the user for the
-command to run."
-  (save-window-excursion
-    (run-picat (read-string "Run Picat: " picat-program-name))))
+;; (defun picat-interactively-start-process (&optional cmd)
+;;   "Start an inferior Picat process.  Return the process started.
+;; Since this command is run implicitly, always ask the user for the
+;; command to run."
+;;   (save-window-excursion
+;;     (run-picat (read-string "Run Picat: " picat-program))))
 
 ;;; Do the user's customization...
 
