@@ -62,7 +62,7 @@ This is a good place to put keybindings."
 
     (define-key smap "\C-c\C-z" 'switch-to-picat)
     (define-key smap "\C-c\C-l" 'picat-load-file)
-    (define-key smap "\C-c\C-k" 'picat-compile-file)
+    (define-key smap "\C-c\C-k" 'picat-compile-load-file)
 
     (define-key smap "\e\C-q" 'smie-indent-sexp)
     (define-key smap "\t" 'smie-indent-line)
@@ -497,6 +497,7 @@ If an optional argument SYSTEM is non-nil, set up mode for the given system."
     ;; ["Indent predicate" picat-indent-predicate t]
     ;; ["Indent buffer" picat-indent-buffer t]
     ;; ["Align region" align (use-region-p)]
+    ["Compile & Load Picat File"  picat-compile-load-file]
     ["Compile Picat File"  picat-compile-file]
     ["Load Picat File"  picat-load-file]
     ;; ["Evaluate Region & Go" picat-send-region-and-go]
@@ -532,7 +533,7 @@ If an optional argument SYSTEM is non-nil, set up mode for the given system."
 (defvar picat-inferior-mode-map
   (let ((m (make-sparse-keymap)))
     (define-key m "\C-c\C-l" 'picat-load-file)
-    (define-key m "\C-c\C-k" 'picat-compile-file)
+    (define-key m "\C-c\C-k" 'picat-compile-load-file)
     m))
 
 (defvar picat-buffer nil)
@@ -555,8 +556,9 @@ A Picat process can be fired up with M-x run-picat."
   picat-inferior-menu picat-inferior-mode-map
   "Commands for Picat code manipulation."
   '("Picat Shell"
-    ["Load Picat File"  picat-load-file]
+    ["Compile & Load Picat File"  picat-compile-load-file]
     ["Compile Picat File"  picat-compile-file]
+    ["Load Picat File"  picat-load-file]
     ))
 
 (defun picat-args-to-list (string)
@@ -712,6 +714,18 @@ Switch to the Picat proccess buffer if the prefix arg is not given."
               (file-name-nondirectory file-name)))
   (comint-send-string (picat-proc) (concat "compile(\"" file-name "\")\n"))
   (unless arg (switch-to-picat t)))
+
+
+(defun picat-compile-load-file (file-name &optional arg)
+
+  (interactive (list (car (comint-get-source
+                           "Compile & Load Picat file: " picat-prev-dir/file
+                           picat-source-modes t))
+                     current-prefix-arg))
+
+  (picat-compile-file file-name t)
+  (picat-load-file file-name arg))
+
 
 
 (defun picat-proc ()
